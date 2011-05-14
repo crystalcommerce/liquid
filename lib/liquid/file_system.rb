@@ -32,10 +32,10 @@ module Liquid
   # file_system.full_path("dir/mypartial")   # => "/some/path/dir/_mypartial.liquid"
   #
   class LocalFileSystem
-    attr_accessor :root
+    attr_accessor :roots
     
-    def initialize(root)
-      @root = root
+    def initialize(*roots)
+      @roots = roots
     end
     
     def read_template_file(context, template_name)
@@ -50,14 +50,35 @@ module Liquid
       raise FileSystemError, "Illegal template name '#{template_path}'" unless template_path =~ /^[^.\/][a-zA-Z0-9_\/]+$/
       
       full_path = if template_path.include?('/')
-        File.join(root, File.dirname(template_path), "_#{File.basename(template_path)}.liquid")
-      else
-        File.join(root, "_#{template_path}.liquid")
+                    find_in_roots do |root|
+                      File.join(root,
+                                File.dirname(template_path),
+                                "_#{File.basename(template_path)}.liquid")
+                    end
+                  else
+                    find_in_roots do |root|
+                      File.join(root, "_#{template_path}.liquid")
+                    end
+                  end
+
+      unless File.expand_path(full_path) =~ /^(#{expanded_root_paths.join('|')})/
+        raise FileSystemError, "Illegal template path '#{File.expand_path(full_path)}'" 
       end
-      
-      raise FileSystemError, "Illegal template path '#{File.expand_path(full_path)}'" unless File.expand_path(full_path) =~ /^#{File.expand_path(root)}/
-      
+
       full_path
+    end
+
+    private
+    def expanded_root_paths
+      roots.map{|root| File.expand_path(root) }
+    end
+
+    def find_in_roots
+      roots.each do |root|
+        path = yield(root)
+        return path if File.exists?(path)
+      end
+      return ""
     end
   end
 end
