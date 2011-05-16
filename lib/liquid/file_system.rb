@@ -78,7 +78,7 @@ module Liquid
         path = yield(root)
         return path if File.exists?(path)
       end
-      return ""
+      yield(roots.first)
     end
   end
 end

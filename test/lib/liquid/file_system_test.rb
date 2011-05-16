@@ -12,6 +12,7 @@ class FileSystemTest < Test::Unit::TestCase
   def test_local
     local_dir = "#{File.dirname(File.expand_path(__FILE__))}/file_system_test"
     file_system = Liquid::LocalFileSystem.new(local_dir)
+    assert_equal "#{local_dir}/_notfound.liquid"    , file_system.full_path("notfound")
     assert_equal "#{local_dir}/_mypartial.liquid"    , file_system.full_path("mypartial")
     assert_equal "#{local_dir}/dir/_mypartial.liquid", file_system.full_path("dir/mypartial")
 
